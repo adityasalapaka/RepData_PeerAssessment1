@@ -30,3 +30,11 @@ median(z$x, na.rm = TRUE)
 weekend <- c("Saturday", "Sunday")
 
 data3$daytype = as.factor(ifelse(is.element(weekdays(as.Date(data3$date)),weekend), "Weekend", "Weekday"))
+
+stepsbyday <- aggregate(steps ~ interval + daytype, data3, mean)
+
+library("ggplot2")
+g <- ggplot(stepsbyday, aes(interval, steps))
+summary(g)
+p <- g + geom_line() + facet_grid(. ~ daytype)
+print(p)
