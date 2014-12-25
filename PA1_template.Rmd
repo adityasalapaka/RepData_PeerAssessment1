@@ -1,25 +1,154 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Reproducible Research, Assignment 1"
+author: "Aditya Salapaka"
+output: html_document
 ---
 
 
-## Loading and preprocessing the data
+## About This Assignment
 
+Fitbit, Nike Fuelband and other such wearable devices provide data. Here, 
+simple analysis has been provided on the data provided by them. The data 
+consisted of the number of steps taken in a day spaced in five-minute intervals.
 
+## About the Data
 
-## What is mean total number of steps taken per day?
+The data was procured from here:
+Dataset: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) [52K]
 
+The variables included in this dataset are:
 
+* **steps**: Number of steps taking in a 5-minute interval (missing values are coded as NA)
 
-## What is the average daily activity pattern?
+* **date**: The date on which the measurement was taken in YYYY-MM-DD format
 
+* **interval**: Identifier for the 5-minute interval in which measurement was taken
 
+The dataset is stored in a comma-separated-value (CSV) file and there are a 
+total of 17,568 observations in this dataset.
 
-## Imputing missing values
+## Data Analysis
 
+### Loading and preprocessing the data
+The dataset was downloaded and extracted from the zip file. This provided a CSV
+file `activity.csv`, which was then read into R.
 
+```{r}
+data <- read.csv("activity.csv")
+```
 
-## Are there differences in activity patterns between weekdays and weekends?
+### What is mean total number of steps taken per day?
+The sum of the steps on a day is caluclated and a histogram is made from the 
+data.
+
+```{r}
+x <- aggregate(data$steps, by = list(Date = data$date), FUN = sum)
+hist(x$x, main = paste("Histogram of Total Number of Steps Taken Per Day"),
+     xlab = "Number of Steps")
+```
+
+```{r, results='hide'}
+mean1 <- mean(x$x, na.rm = TRUE)
+median1 <- median(x$x, na.rm = TRUE)
+```
+
+The mean is `r mean1` and median is `r median1`.
+
+### What is the average daily activity pattern?
+All missing values from the data are removed and mean number of steps per 
+interval is caluclated and plotted as a time series plot.
+
+```{r}
+# Removing missing values
+data2 <- data[with(data, order(interval)),]
+data2 <- data2[complete.cases(data2),]
+
+# Creating a data frame with mean values for each interval.
+y <- aggregate(data2$steps[complete.cases(data2$steps)], 
+               by = list(interval = data2$interval), FUN = mean)
+
+# Plotting final data.
+plot(y, type = "l", xlab = "Time Interval", ylab = "Number of Steps", 
+     main = paste("Average of Number of Steps Taken Per Day By Interval"))
+```
+
+The time interval with maximum number of steps is found.
+```{r, results='hide'}
+maxsteps <- y$interval[which(y$x == max(y$x))]
+```
+
+The time interval is `r maxsteps`.
+
+### Imputing missing values
+The total number of missing values is calculated.
+
+```{r, results='hold'}
+totalna <- sum(!complete.cases(data))
+```
+
+`r totalna` values are missing from the dataset.
+
+These missing values are replaced by the mean of the number of steps of that 
+day, then plotted against the time interval.
+
+```{r}
+library("plyr")
+# Replacing missing values.
+data3 <- data[with(data, order(interval)),]
+replacena <- function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
+data3 <- ddply(data3, ~ interval, transform, steps = replacena(steps))
+data3 <- data3[order(data3$interval),]
+
+# Creating a data frame with sum of number of steps per interval.
+z <- aggregate(data3$steps, by = list(Date = data3$date), FUN = sum)
+
+# Plotting the final data.
+hist(z$x, main = paste("Histogram of Total Number of Steps Taken Per Day"),
+     xlab = "Number of Steps")
+```
+
+The mean and median of this new dataset is calculated.
+
+```{r, results='hold'}
+mean2 <- mean(z$x, na.rm = TRUE)
+median2 <- median(z$x, na.rm = TRUE)
+```
+
+The mean is `r mean2` and median is `r median2`.
+
+The difference between the mean of this data and the previous data is 
+`r mean2 - mean1`. 
+
+The difference between the medians of this data and the previous data is 
+`r median2 - median1`. 
+
+The difference between the total number of steps in the datasets is 
+`r sum(data3$steps, na.rm=TRUE) - sum(data$steps, na.rm=TRUE)`.
+
+### Are there differences in activity patterns between weekdays and weekends?
+
+Steps were plotted against interval in different plots for weekdays and 
+weekends.
+
+```{r}
+
+# Indentifcation of day as a weekday or weekend.
+weekend <- c("Saturday", "Sunday")
+
+data3$daytype = as.factor(ifelse(is.element(weekdays(as.Date(data3$date))
+                                            ,weekend), "Weekend", "Weekday"))
+
+# A data frame with mean number of steps, time interval and day type 
+# (weekend/weekday) is created. 
+stepsbyday <- aggregate(steps ~ interval + daytype, data3, mean)
+
+# Plottinf the final data.
+library("ggplot2")
+g <- ggplot(stepsbyday, aes(interval, steps))
+p <- g + geom_line() + facet_grid(daytype ~.) + xlab("Time Interval")
+p <- p + ylab("Number of Steps")
+print(p)
+```
+
+While the general trend seems to be same, it is seen that a higher peak is
+observed during weekdays.
