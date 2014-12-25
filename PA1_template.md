@@ -39,7 +39,7 @@ data <- read.csv("activity.csv")
 ```
 
 ### What is mean total number of steps taken per day?
-The sum of the steps on a day is caluclated and a histogram is made from the 
+The sum of the steps on a day is calculated and a histogram is made from the 
 data.
 
 
@@ -60,8 +60,8 @@ median1 <- median(x$x, na.rm = TRUE)
 The mean is 1.0766 &times; 10<sup>4</sup> and median is 10765.
 
 ### What is the average daily activity pattern?
-All missing values from the data are removed and mean number of steps per 
-interval is caluclated and plotted as a time series plot.
+All records with missing values are removed from the data and mean number of
+steps per interval is caluclated and plotted as a time series plot.
 
 
 ```r
